@@ -1,0 +1,80 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: volumereplications.replication.storage.ramen.io
+spec:
+  group: replication.storage.ramen.io
+  names:
+    kind: VolumeReplication
+    listKind: VolumeReplicationList
+    plural: volumereplications
+    singular: volumereplication
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: VolumeReplication is the Schema for the volumereplications API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: VolumeReplicationSpec defines the desired state of VolumeReplication
+            properties:
+              dataSource:
+                description: 'This field can be used to specify either: * An existing
+                  PVC (PersistentVolumeClaim) It will enable the volume for replication
+                  and ensure its state is as desired.'
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
+                    type: string
+                  kind:
+                    description: Kind is the type of resource being referenced
+                    type: string
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              state:
+                description: Specifies the desired replication state for the DataSource
+                enum:
+                - Primary
+                - Secondary
+                type: string
+            type: object
+          status:
+            description: VolumeReplicationStatus defines the observed state of VolumeReplication
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

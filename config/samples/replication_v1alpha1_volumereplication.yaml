@@ -1,0 +1,9 @@
+apiVersion: replication.storage.ramen.io/v1alpha1
+kind: VolumeReplication
+metadata:
+  name: volumereplication-sample
+spec:
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: rbd-pvc
+  state: Primary
