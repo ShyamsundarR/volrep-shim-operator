@@ -46,22 +46,38 @@ type VolumeReplicationSpec struct {
 	State ReplicationState `json:"state,omitempty"`
 }
 
-// ObservedState is the set of states that have been observed
+// ObservedStateValue is the set of states that have been observed
 // for the volume replication request
 // +kubebuilder:validation:Enum=Primary;Secondary;Unknown
-type ObservedState string
+type ObservedStateValue string
 
 // valid values for ObservedState
 const (
-	ObservedPrimary   ObservedState = "Primary"
-	ObservedSecondary ObservedState = "Secondary"
-	ObservedUnknown   ObservedState = "Unknown"
+	ObservedPrimary   ObservedStateValue = "Primary"
+	ObservedSecondary ObservedStateValue = "Secondary"
+	ObservedUnknown   ObservedStateValue = "Unknown"
+)
+
+const (
+	// ConditionTypeReconciled denotes resource was reconciled
+	ConditionTypeReconciled = "Reconciled"
+	// ConditionReasonComplete denotes reconciliation was completed
+	ConditionReasonComplete = "Complete"
+	// ConditionReasonError denotes reconciliation had errors
+	ConditionReasonError = "Error"
 )
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
-	State      ObservedState      `json:"state"`
-	Conditions []metav1.Condition `json:"conditions"`
+	// ObservedState reflects the state observed at the generation in ObservedGeneration
+	ObservedState ObservedStateValue `json:"state,omitempty"`
+	// ObservedGeneration reflects the generation of the most recently observed volume replication
+	// NOTE: As desired state may flip if user updates it before any actual change, the observed
+	// generation is reflected in status to aid ensuring actual state is the same as the
+	// current generation of desired state
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Conditions regarding status
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true

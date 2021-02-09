@@ -1,0 +1,13 @@
+# Sample PVC for minikube localhost volume dynamic provisioning
+# Helps with the sample PVC used in config/samples/replication_v1alpha1_volumereplication.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-sample
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Mi

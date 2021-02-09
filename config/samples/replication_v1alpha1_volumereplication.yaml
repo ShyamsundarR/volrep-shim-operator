@@ -5,5 +5,5 @@ metadata:
 spec:
   dataSource:
     kind: PersistentVolumeClaim
-    name: rbd-pvc
+    name: pvc-sample
   state: Primary

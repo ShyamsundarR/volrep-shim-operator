@@ -91,22 +91,23 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	logger.Info("will reconcile", "spec", volReplication.Spec)
 
 	conditionSuccess := metav1.Condition{
-		Type:    "Reconciled",
+		Type:    replicationv1alpha1.ConditionTypeReconciled,
 		Status:  metav1.ConditionTrue,
-		Reason:  "Complete",
+		Reason:  replicationv1alpha1.ConditionReasonComplete,
 		Message: "Reconcile complete",
 	}
 
 	conditionFailure := metav1.Condition{
 		Type:    "Reconciled",
 		Status:  metav1.ConditionFalse,
-		Reason:  "Error",
+		Reason:  replicationv1alpha1.ConditionReasonError,
 		Message: "Reconcile error",
 	}
 	defer func() {
 		if err != nil && statusErr == nil {
 			// Update failure status
-			volReplication.Status.State = replicationv1alpha1.ObservedUnknown
+			volReplication.Status.ObservedState = replicationv1alpha1.ObservedUnknown
+			volReplication.Status.ObservedGeneration = volReplication.Generation
 			conditionFailure.Message = err.Error()
 			meta.SetStatusCondition(&volReplication.Status.Conditions, conditionFailure)
 			// May not succeed, but err is non-nil and will be retried
@@ -168,10 +169,11 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	// Update status
 	if volReplication.Spec.State == replicationv1alpha1.ReplicationPrimary {
-		volReplication.Status.State = replicationv1alpha1.ObservedPrimary
+		volReplication.Status.ObservedState = replicationv1alpha1.ObservedPrimary
 	} else {
-		volReplication.Status.State = replicationv1alpha1.ObservedSecondary
+		volReplication.Status.ObservedState = replicationv1alpha1.ObservedSecondary
 	}
+	volReplication.Status.ObservedGeneration = volReplication.Generation
 	meta.SetStatusCondition(&volReplication.Status.Conditions, conditionSuccess)
 	statusErr = r.Status().Update(ctx, volReplication)
 	if err == nil {
