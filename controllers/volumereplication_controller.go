@@ -125,8 +125,8 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	if volReplication.Spec.State != replicationv1alpha1.ReplicationPrimary &&
-		volReplication.Spec.State != replicationv1alpha1.ReplicationSecondary {
+	if !(volReplication.Spec.State == replicationv1alpha1.ReplicationPrimary ||
+		volReplication.Spec.State == replicationv1alpha1.ReplicationSecondary) {
 		err = fmt.Errorf("unsupported state in resource %v", volReplication.Spec.State)
 		return ctrl.Result{}, err
 	}
