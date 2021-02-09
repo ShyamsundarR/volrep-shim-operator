@@ -37,9 +37,6 @@ const (
 
 // VolumeReplicationSpec defines the desired state of VolumeReplication
 type VolumeReplicationSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// This field can be used to specify either:
 	// * An existing PVC (PersistentVolumeClaim)
 	// It will enable the volume for replication and ensure its state is as desired.
@@ -51,8 +48,7 @@ type VolumeReplicationSpec struct {
 
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true

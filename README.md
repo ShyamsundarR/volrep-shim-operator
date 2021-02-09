@@ -44,5 +44,5 @@ NOTE: At some point you would need 2 kubernetes clusters with Ceph managed by Ro
 The sample VolumeReplication CR can be applied to the cluster running the operator as follows,
 `$ kubectl apply -f config/samples/replication_v1alpha1_volumereplication.yaml`
 
-The reconcile logs can be viewed in paralle for the reconcile of the above created CR as follows,
+The reconcile logs can be viewed in parallel for the reconcile of the above created CR as follows,
 `$ kubectl logs -fn volreplication-shim-system deployment.apps/volreplication-shim-controller-manager -c manager`

@@ -23,6 +23,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	meta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,36 +71,63 @@ const (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	var statusErr error
 	logger := r.Log.WithValues("volumereplication", req.NamespacedName)
-	logger.Info("Reconcile started")
+	logger.Info("reconcile started")
 
 	// Get the CR for this reconcile instance
 	volReplication := &replicationv1alpha1.VolumeReplication{}
 	err := r.Get(ctx, req.NamespacedName, volReplication)
 	if err != nil {
-		// NOTE: The reconciler manager puts this back in the queue with an expomnential
+		// NOTE: The reconciler manager puts this back in the queue with an exponential
 		// backoff, so no requeue from our end. Further, there is a stack trace that is printed on
 		// error returns in the logs, see: https://github.com/operator-framework/operator-sdk/issues/1615
 		// so avoiding error returns unless it is critcal (and that is possibly correct as well)
 		if !kerrors.IsNotFound(err) {
-			logger.Error(err, "Failed to get VolumeReplication CR")
+			logger.Error(err, "failed to get VolumeReplication CR")
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	logger.Info("Will reconcile", "Spec", volReplication.Spec)
+	logger.Info("will reconcile", "spec", volReplication.Spec)
+
+	conditionSuccess := metav1.Condition{
+		Type:    "Reconciled",
+		Status:  metav1.ConditionTrue,
+		Reason:  "Complete",
+		Message: "Reconcile complete",
+	}
+
+	conditionFailure := metav1.Condition{
+		Type:    "Reconciled",
+		Status:  metav1.ConditionFalse,
+		Reason:  "Error",
+		Message: "Reconcile error",
+	}
+
+	defer func() {
+		if err != nil && statusErr == nil {
+			// Update failure status
+			conditionFailure.Message = err.Error()
+			meta.SetStatusCondition(&volReplication.Status.Conditions, conditionFailure)
+			// May not succeed, but err is non-nil and will be retried
+			_ = r.Status().Update(ctx, volReplication)
+		}
+	}()
 
 	if volReplication.Spec.DataSource == nil {
-		logger.Info("Reconcile finished")
-		return ctrl.Result{}, nil
+		err = fmt.Errorf("missing dataSource %v", volReplication.Spec)
+		return ctrl.Result{}, err
 	}
 
 	if volReplication.Spec.DataSource.Kind != pvcKind {
-		return ctrl.Result{}, fmt.Errorf("Unsupported data source in resource %v", volReplication.Spec.DataSource.Kind)
+		err = fmt.Errorf("unsupported data source in resource %v", volReplication.Spec.DataSource.Kind)
+		return ctrl.Result{}, err
 	}
 
 	if volReplication.Spec.State != replicationv1alpha1.ReplicationPrimary &&
 		volReplication.Spec.State != replicationv1alpha1.ReplicationSecondary {
-		return ctrl.Result{}, fmt.Errorf("Unsupported state in resource %v", volReplication.Spec.State)
+		err = fmt.Errorf("unsupported state in resource %v", volReplication.Spec.State)
+		return ctrl.Result{}, err
 	}
 
 	// Get and validate PVC for VolumeReplication reconcile instance
@@ -109,17 +138,15 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 	err = r.Get(ctx, pvcObjectKey, replicationPVC)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			logger.Error(err, "Failed to get PersistentVolumeClaim", "PVC", pvcObjectKey)
-		}
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		err = fmt.Errorf("failed to get PersistentVolumeClaim for PVC %+v", pvcObjectKey)
+		return ctrl.Result{}, err
 	}
-	logger.Info("Found", "PVC", replicationPVC)
+	logger.Info("found", "PVC", replicationPVC)
 
 	// Check if PVC is bound
 	if replicationPVC.Status.Phase != corev1.ClaimBound {
-		logger.Info("PVC is not yet bound", "PVCStatus", replicationPVC.Status.Phase)
-		return ctrl.Result{Requeue: true}, nil
+		err = fmt.Errorf("PVC is not yet bound, status %v", replicationPVC.Status.Phase)
+		return ctrl.Result{}, err
 	}
 
 	// Get the PV
@@ -128,21 +155,26 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		Name: replicationPVC.Spec.VolumeName,
 	}
 	if pvObjectKey.Name == "" {
-		logger.Info("Invalid PVC state", "Status.Phase", replicationPVC.Status.Phase, "Spec.Volume", "")
-		return ctrl.Result{}, fmt.Errorf("Invalid PVC state, bound with no volume name")
+		err = fmt.Errorf("invalid PVC state, bound with no volume name")
+		return ctrl.Result{}, err
 	}
 
 	err = r.Get(ctx, pvObjectKey, replicationPV)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			logger.Error(err, "Failed to get PersistentVolume", "PV", pvObjectKey)
-		}
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		err = fmt.Errorf("failed to get PersistentVolume %+v for PVC %+v", pvObjectKey, pvcObjectKey)
+		return ctrl.Result{}, err
 	}
-	logger.Info("Found", "PV", replicationPV)
+	logger.Info("found", "PV", replicationPV)
+
+	// Update status
+	meta.SetStatusCondition(&volReplication.Status.Conditions, conditionSuccess)
+	statusErr = r.Status().Update(ctx, volReplication)
+	if err == nil {
+		err = statusErr
+	}
 
 	logger.Info("Reconcile finished")
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
