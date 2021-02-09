@@ -136,8 +136,17 @@ spec:
                   - type
                   type: object
                 type: array
+              state:
+                description: ObservedState is the set of states that have been observed
+                  for the volume replication request
+                enum:
+                - Primary
+                - Secondary
+                - Unknown
+                type: string
             required:
             - conditions
+            - state
             type: object
         type: object
     served: true

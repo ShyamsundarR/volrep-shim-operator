@@ -103,10 +103,10 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		Reason:  "Error",
 		Message: "Reconcile error",
 	}
-
 	defer func() {
 		if err != nil && statusErr == nil {
 			// Update failure status
+			volReplication.Status.State = replicationv1alpha1.ObservedUnknown
 			conditionFailure.Message = err.Error()
 			meta.SetStatusCondition(&volReplication.Status.Conditions, conditionFailure)
 			// May not succeed, but err is non-nil and will be retried
@@ -167,6 +167,11 @@ func (r *VolumeReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	logger.Info("found", "PV", replicationPV)
 
 	// Update status
+	if volReplication.Spec.State == replicationv1alpha1.ReplicationPrimary {
+		volReplication.Status.State = replicationv1alpha1.ObservedPrimary
+	} else {
+		volReplication.Status.State = replicationv1alpha1.ObservedSecondary
+	}
 	meta.SetStatusCondition(&volReplication.Status.Conditions, conditionSuccess)
 	statusErr = r.Status().Update(ctx, volReplication)
 	if err == nil {

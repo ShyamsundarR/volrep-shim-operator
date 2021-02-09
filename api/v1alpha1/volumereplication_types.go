@@ -46,8 +46,21 @@ type VolumeReplicationSpec struct {
 	State ReplicationState `json:"state,omitempty"`
 }
 
+// ObservedState is the set of states that have been observed
+// for the volume replication request
+// +kubebuilder:validation:Enum=Primary;Secondary;Unknown
+type ObservedState string
+
+// valid values for ObservedState
+const (
+	ObservedPrimary   ObservedState = "Primary"
+	ObservedSecondary ObservedState = "Secondary"
+	ObservedUnknown   ObservedState = "Unknown"
+)
+
 // VolumeReplicationStatus defines the observed state of VolumeReplication
 type VolumeReplicationStatus struct {
+	State      ObservedState      `json:"state"`
 	Conditions []metav1.Condition `json:"conditions"`
 }
 
