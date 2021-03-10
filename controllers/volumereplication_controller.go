@@ -29,7 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	replicationv1alpha1 "github.com/volrep-shim-operator/api/v1alpha1"
+	replicationv1alpha1 "github.com/shyamsundarr/volrep-shim-operator/api/v1alpha1"
 )
 
 // VolumeReplicationReconciler reconciles a VolumeReplication object

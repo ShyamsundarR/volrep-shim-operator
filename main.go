@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	replicationv1alpha1 "github.com/volrep-shim-operator/api/v1alpha1"
-	"github.com/volrep-shim-operator/controllers"
+	replicationv1alpha1 "github.com/shyamsundarr/volrep-shim-operator/api/v1alpha1"
+	"github.com/shyamsundarr/volrep-shim-operator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

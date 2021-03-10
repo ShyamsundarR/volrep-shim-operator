@@ -1,7 +1,7 @@
 domain: storage.ramen.io
 layout: go.kubebuilder.io/v3
 projectName: volreplication-shim
-repo: github.com/volrep-shim-operator
+repo: github.com/shyamsundarr/volrep-shim-operator
 resources:
 - crdVersion: v1
   group: replication
